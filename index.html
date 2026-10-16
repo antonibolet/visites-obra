@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visites d'obra · Tacuina</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Visites obra">
+<style>
+  :root{
+    --tan:#AA8F74; --tan-d:#8C7258; --tan-l:#F1EBE4;
+    --ink:#1A1A1A; --grey:#636362; --grey2:#9C9B9B;
+    --bg:#F6F3EF; --card:#FFFFFF; --line:#E3DCD3;
+    --red:#B3261E; --green:#2E7D4F;
+    --r:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  body{min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .hidden{display:none !important}
+
+  header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;
+    padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+  header.top img{height:30px;width:auto;display:block}
+  header.top .t{font-size:14px;color:var(--grey);margin-left:auto;text-align:right;line-height:1.2}
+
+  main{max-width:640px;margin:0 auto;padding:16px}
+  h1{font-size:22px;margin:8px 0 14px;font-weight:700}
+  h2{font-size:15px;margin:22px 0 8px;font-weight:600;color:var(--grey);text-transform:uppercase;letter-spacing:.04em}
+  p.hint{color:var(--grey);font-size:14px;margin:6px 0 0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:12px 16px;
+    border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:600;width:100%}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn.accent{background:var(--tan);border-color:var(--tan);color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--red);border-color:#E9C9C6;background:#fff}
+  .btn:disabled{opacity:.45}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+  .stack>*+*{margin-top:10px}
+
+  input[type=text],input[type=password],textarea{width:100%;font:inherit;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}
+  input:focus,textarea:focus{border-color:var(--tan);box-shadow:0 0 0 3px var(--tan-l)}
+  textarea{min-height:96px;resize:vertical}
+  .pin{font-size:28px;letter-spacing:.4em;text-align:center}
+  .err{color:var(--red);font-size:15px;margin-top:10px;min-height:1em}
+
+  .tec{min-height:64px;font-size:19px}
+  .tec.last{border-color:var(--tan);box-shadow:0 0 0 2px var(--tan-l)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips:empty{display:none}
+  .lbl{display:block;font-weight:600;font-size:16px}
+  .toggle{display:flex;gap:12px;align-items:flex-start;margin-top:22px;cursor:pointer}
+  .toggle input{width:26px;height:26px;flex:none;margin:2px 0 0;accent-color:var(--tan)}
+  .toggle .hint{font-size:14px;color:var(--grey)}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-size:15px}
+
+  .vhead{display:flex;align-items:flex-start;gap:10px}
+  .vhead .ref{font-size:20px;font-weight:700;line-height:1.2;word-break:break-word}
+  .vhead .meta{color:var(--grey);font-size:14px;margin-top:2px}
+  .vhead .edit{margin-left:auto;border:0;background:none;color:var(--tan-d);font-size:15px;padding:4px}
+
+  .obs .oh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .obs .oh b{font-size:17px}
+  .obs .oh span{color:var(--grey);font-size:14px}
+  .obs .oh .del{margin-left:auto;border:0;background:none;color:var(--grey2);font-size:14px;padding:6px}
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+  .thumbs:empty{display:none}
+  .th{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--tan-l)}
+  .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .th .x{position:absolute;top:3px;right:3px;width:28px;height:28px;border-radius:50%;border:0;
+    background:rgba(26,26,26,.72);color:#fff;font-size:16px;line-height:28px;padding:0}
+  .media{margin-top:8px}
+  .mi{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;font-size:15px}
+  .mi audio{height:36px;flex:1;min-width:0}
+  .mi .x{border:0;background:none;color:var(--grey2);font-size:20px;padding:0 4px}
+  .warn{color:#8A5A00;font-size:14px;margin-top:6px}
+  .rec{background:var(--red) !important;border-color:var(--red) !important;color:#fff !important}
+  .btn.dictar{margin-top:10px;border-color:var(--tan);color:var(--tan-d);min-height:56px;font-size:18px}
+  .lang{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:14px;color:var(--grey)}
+  .lang button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:14px;font-weight:600;color:var(--grey)}
+  .lang button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .escolta{font-size:14px;color:var(--red);margin-top:6px;font-weight:600}
+  .small{font-size:15px;min-height:46px}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .bar .row{max-width:640px;margin:0 auto}
+
+  .progress{height:12px;background:var(--tan-l);border-radius:999px;overflow:hidden;margin:16px 0 8px}
+  .progress i{display:block;height:100%;width:0;background:var(--tan);transition:width .3s}
+  .big{font-size:56px;text-align:center;margin:20px 0 4px}
+  .center{text-align:center}
+  .hist .hi{padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+  .hist .hi:first-child{border-top:0}
+  .hist .hi span{color:var(--grey)}
+
+  .toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;z-index:20;max-width:90vw;text-align:center}
+  .modal{position:fixed;inset:0;z-index:30;background:rgba(26,26,26,.55);display:flex;align-items:flex-end;justify-content:center}
+  .modal .sheet{background:var(--card);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom))}
+  .modal .sheet h3{margin:0 0 8px;font-size:19px}
+  .modal .sheet p{margin:0 0 14px;color:var(--grey);white-space:pre-line}
+  .viewer{position:fixed;inset:0;z-index:40;background:#000;display:flex;align-items:center;justify-content:center}
+  .viewer img{max-width:100%;max-height:100%}
+  footer{color:var(--grey2);font-size:12px;text-align:center;margin:24px 0 0}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <img alt="Tacuina · Santos Cerdanyola" src="data:image/png;base64,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">
+  <div class="t" id="hdr">Visites d'obra</div>
+</header>
+
+<main>
+  <!-- PIN -->
+  <section id="s-pin" class="hidden">
+    <h1>Accés</h1>
+    <div class="card stack">
+      <input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN">
+      <button class="btn primary" id="b-pin">Entrar</button>
+      <div class="err" id="pin-err"></div>
+    </div>
+  </section>
+
+  <!-- INICI: visita pendent -->
+  <section id="s-inici" class="hidden">
+    <div id="pendent"></div>
+  </section>
+
+  <!-- NOVA VISITA / EDITAR DADES -->
+  <section id="s-ref" class="hidden">
+    <h1 id="ref-tit">Nova visita</h1>
+    <div class="card stack">
+      <label class="lbl" for="tec">Qui fa el control?</label>
+      <input id="tec" type="text" autocomplete="off" autocapitalize="words" placeholder="Nom i cognom">
+      <div class="chips" id="tec-recents"></div>
+      <label class="lbl" for="ref" style="margin-top:16px">Referència de l'obra o client</label>
+      <input id="ref" type="text" autocomplete="off" placeholder="Ex.: Garcia – Cuina c/ Major 12">
+      <div class="chips" id="recents"></div>
+      <div class="err" id="ref-err"></div>
+      <button class="btn primary" id="b-ref">Començar la visita</button>
+      <button class="btn ghost hidden" id="b-ref-back">Tornar</button>
+    </div>
+    <div id="hist-w" class="hidden">
+      <h2>Últimes visites enviades</h2>
+      <div class="card hist" id="hist"></div>
+    </div>
+  </section>
+
+  <!-- VISITA -->
+  <section id="s-visita" class="hidden">
+    <div class="card vhead">
+      <div>
+        <div class="ref" id="v-ref"></div>
+        <div class="meta" id="v-meta"></div>
+        <div class="lang" id="lang">Idioma del dictat: <button data-l="ca-ES">CA</button><button data-l="es-ES">ES</button></div>
+      </div>
+      <button class="edit" id="b-edit-ref">Editar</button>
+    </div>
+    <div id="obs-list"></div>
+    <button class="btn" id="b-add-obs2">+ Afegir observació</button>
+    <label class="card toggle" for="decisions">
+      <input type="checkbox" id="decisions">
+      <span><b>Hi ha decisions acordades amb el client</b><br><span class="hint">Es farà una còpia de l’informe perquè la signi.</span></span>
+    </label>
+    <h2>Comentari general (opcional)</h2>
+    <textarea id="nota-gen" placeholder="Resum de la visita, pendents, comentaris generals… (pots dictar amb el micròfon del teclat)"></textarea>
+    <button class="btn danger" id="b-descartar" style="margin-top:22px">Descartar aquesta visita</button>
+    <footer id="ver"></footer>
+  </section>
+
+  <!-- ENVIANT -->
+  <section id="s-enviant" class="hidden">
+    <h1 id="env-tit">Enviant la visita…</h1>
+    <div class="card">
+      <div id="env-txt">Preparant…</div>
+      <div class="progress"><i id="env-bar"></i></div>
+      <p class="hint" id="env-hint">No tanquis l'app fins que acabi. Amb wifi va més ràpid.</p>
+      <div class="err" id="env-err"></div>
+      <div class="stack hidden" id="env-retry">
+        <button class="btn primary" id="b-retry">Tornar-ho a provar</button>
+        <button class="btn" id="b-back-visit">Tornar a la visita</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FET -->
+  <section id="s-fet" class="hidden">
+    <div class="big">✓</div>
+    <h1 class="center">Visita enviada</h1>
+    <div class="card center" id="fet-txt"></div>
+    <button class="btn primary" id="b-nova">Nova visita</button>
+  </section>
+</main>
+
+<div class="bar hidden" id="bar">
+  <div class="row">
+    <button class="btn" id="b-add-obs">+ Observació</button>
+    <button class="btn accent" id="b-enviar">Enviar visita</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================================
+   App de visites d'obra · Tacuina
+   ========================================================================= */
+const APP_VER = '1.4';
+const MAX_SMALL = 5 * 1024 * 1024;   // fins a 5 MB es puja d'un cop
+const CHUNK = 4 * 1024 * 1024;       // trossos de 4 MiB (múltiple de 256 KiB)
+const PHOTO_MAX = 2000;              // costat llarg màxim de les fotos (px)
+const PHOTO_Q = 0.82;                // qualitat JPEG
+let CFG = { maxVideoMb: 300 };
+let V = null;                        // visita en curs
+let sending = false;
+
+/* ------------------------------ utilitats ------------------------------ */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pad = (n, l = 2) => String(n).padStart(l, '0');
+const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function isoLocal(d) {
+  const o = -d.getTimezoneOffset(), s = o >= 0 ? '+' : '-', a = Math.abs(o);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' +
+    pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + s + pad(Math.floor(a / 60)) + ':' + pad(a % 60);
+}
+function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function dataCurta(iso) { const d = new Date(iso); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + hhmm(d); }
+function mb(b) { return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' kB'; }
+function durada(s) { s = Math.round(s); return Math.floor(s / 60) + ':' + pad(s % 60); }
+function errMsg(e) { return String((e && e.message) || e || 'Error desconegut').replace(/^Exception:\s*/, ''); }
+
+let toastT;
+function toast(msg, ms = 2500) {
+  let t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toastT); if (ms) toastT = setTimeout(() => t.classList.add('hidden'), ms);
+}
+function confirmar(titol, text, ok = 'Sí', ko = 'Cancel·lar', perill = false) {
+  return new Promise(res => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = '<div class="sheet"><h3>' + esc(titol) + '</h3><p>' + esc(text) + '</p><div class="stack">' +
+      '<button class="btn ' + (perill ? 'danger' : 'primary') + '" data-r="1">' + esc(ok) + '</button>' +
+      (ko ? '<button class="btn ghost" data-r="0">' + esc(ko) + '</button>' : '') + '</div></div>';
+    m.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b || e.target === m) { m.remove(); res(!!(b && b.dataset.r === '1')); } });
+    document.body.appendChild(m);
+  });
+}
+
+/* --------------------------- servidor (Apps Script) --------------------------- */
+// Servidor: Apps Script del compte tacuinainteriors (mateix Drive i correu).
+const API_URL = 'https://script.google.com/macros/s/AKfycbznJqCuwwjiL1ykj36rOV3fwZYrY6Fk-I6ELI2vlcdPfZI2ctlh9-IXj7TbehvgUm4_/exec';
+const dinsGoogle = () => !!(window.google && google.script && google.script.run);
+function srv(fn, ...args) {
+  if (dinsGoogle()) {
+    return new Promise((resolve, reject) => {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args);
+    });
+  }
+  return fetch(API_URL, {
+    method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // petició simple: sense preflight CORS
+    body: JSON.stringify({ fn, args }),
+  }).then(r => {
+    if (!r.ok) throw new Error('Error del servidor (' + r.status + ')');
+    return r.text();
+  }, () => { throw new Error('Sense connexió amb el servidor'); }).then(t => {
+    let d; try { d = JSON.parse(t); } catch (e) { throw new Error('Resposta no vàlida del servidor'); }
+    if (!d || !d.ok) throw new Error((d && d.error) || 'Resposta no vàlida del servidor');
+    return d.r;
+  });
+}
+async function srvR(fn, args, intents = 4) {
+  let last;
+  for (let i = 0; i < intents; i++) {
+    try { return await srv(fn, ...args); }
+    catch (e) { last = e; if (/PIN/.test(errMsg(e))) throw e; await sleep(1500 * (i + 1)); }
+  }
+  throw last;
+}
+const pin = () => localStorage.getItem('tc_pin') || '';
+
+/* --------------------------- emmagatzematge local --------------------------- */
+// IndexedDB per a la visita i els fitxers (sobreviu si el mòbil tanca la pestanya).
+const MEM = { kv: new Map(), blobs: new Map() };
+let memOnly = false, dbp = null;
+function db() {
+  if (!dbp) dbp = new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('no idb'));
+    const r = indexedDB.open('visitesTacuina', 1);
+    r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('kv'); d.createObjectStore('blobs'); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbp;
+}
+async function idb(store, mode, fn) {
+  if (memOnly) return fn(null);
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(store, mode); let out;
+    const rq = fn(tx.objectStore(store));
+    if (rq) rq.onsuccess = () => { out = rq.result; };
+    tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+  });
+}
+const kvGet = k => memOnly ? MEM.kv.get(k) : idb('kv', 'readonly', s => s.get(k));
+const kvSet = (k, v) => memOnly ? MEM.kv.set(k, v) : idb('kv', 'readwrite', s => s.put(v, k));
+const kvDel = k => memOnly ? MEM.kv.delete(k) : idb('kv', 'readwrite', s => s.delete(k));
+const blobGet = k => memOnly ? MEM.blobs.get(k) : idb('blobs', 'readonly', s => s.get(k));
+const blobSet = (k, v) => memOnly ? MEM.blobs.set(k, v) : idb('blobs', 'readwrite', s => s.put(v, k));
+const blobDel = k => memOnly ? MEM.blobs.delete(k) : idb('blobs', 'readwrite', s => s.delete(k));
+async function save() { if (V) await kvSet('visita', JSON.parse(JSON.stringify(V))); }
+
+/* ------------------------------ navegació ------------------------------ */
+function show(s) {
+  ['pin', 'inici', 'ref', 'visita', 'enviant', 'fet'].forEach(x => $('s-' + x).classList.toggle('hidden', x !== s));
+  $('bar').classList.toggle('hidden', s !== 'visita');
+  $('hdr').textContent = V && (s === 'visita' || s === 'enviant') ? V.tecnic : "Visites d'obra";
+  window.scrollTo(0, 0);
+}
+
+/* ------------------------------ arrencada ------------------------------ */
+async function init() {
+  try { await db(); } catch (e) { memOnly = true; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  try { V = await kvGet('visita') || null; } catch (e) { V = null; }
+  if (V && V.estat === 'enviant') { V.estat = 'pendent'; await save(); }
+  try { CFG = JSON.parse(localStorage.getItem('tc_cfg')) || CFG; } catch (e) {}
+  $('ver').textContent = 'Visites d’obra Tacuina · v' + APP_VER + (dinsGoogle() ? ' · G' : '');
+  if (!dinsGoogle() && 'serviceWorker' in navigator && /^(https:|http:\/\/(localhost|127\.))/.test(location.href)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  if (!pin()) return show('pin');
+  // Refresca la configuració en segon pla (si no hi ha cobertura, es fa servir la desada)
+  srv('checkPin', pin()).then(c => { CFG = c; localStorage.setItem('tc_cfg', JSON.stringify(c)); })
+    .catch(e => { if (/PIN incorrecte/.test(errMsg(e))) { localStorage.removeItem('tc_pin'); show('pin'); } });
+  goInici();
+  if (memOnly) toast('Atenció: aquest navegador no desa l’esborrany. No tanquis l’app fins enviar.', 6000);
+}
+
+$('b-pin').onclick = async () => {
+  const p = $('pin').value.trim(); if (!p) return;
+  $('b-pin').disabled = true; $('pin-err').textContent = '';
+  try {
+    const c = await srv('checkPin', p);
+    localStorage.setItem('tc_pin', p); CFG = c; localStorage.setItem('tc_cfg', JSON.stringify(c));
+    goInici();
+  } catch (e) { $('pin-err').textContent = errMsg(e); }
+  $('b-pin').disabled = false;
+};
+$('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('b-pin').click(); });
+
+/* ------------------------------ inici ------------------------------ */
+function llista(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } }
+function recorda(k, v) {
+  const l = [v].concat(llista(k).filter(x => x.toLowerCase() !== v.toLowerCase())).slice(0, 8);
+  localStorage.setItem(k, JSON.stringify(l));
+}
+function goInici() {
+  if (!V) return goRef(false);
+  const nObs = V.obs.length, nF = V.obs.reduce((a, o) => a + o.items.filter(i => i.tipus === 'foto').length, 0);
+  const pend = V.estat === 'pendent';
+  $('pendent').innerHTML = '<h1>' + (pend ? 'Visita pendent d’enviar' : 'Visita en curs') + '</h1><div class="card stack"><div><b>' +
+    esc(V.referencia) + '</b><br><span class="hint">' + esc(V.tecnic) + ' · ' + dataCurta(V.inici) + ' · ' + nObs + ' obs. · ' + nF + ' fotos</span></div>' +
+    (pend ? '<button class="btn accent" id="b-p-env">Enviar ara</button>' : '') +
+    '<button class="btn ' + (pend ? '' : 'primary') + '" id="b-p-cont">' + (pend ? 'Obrir la visita' : 'Continuar la visita') + '</button></div>';
+  $('b-p-cont').onclick = () => goVisita();
+  if (pend) $('b-p-env').onclick = () => enviar();
+  show('inici');
+}
+
+/* ------------------------- nova visita / editar dades ------------------------- */
+let editantRef = false;
+function chips(el, k) {
+  $(el).innerHTML = llista(k).map(r => '<button class="chip" data-r="' + esc(r) + '">' + esc(r) + '</button>').join('');
+}
+function goRef(editar) {
+  editantRef = editar;
+  $('ref-tit').textContent = editar ? 'Dades de la visita' : 'Nova visita';
+  $('tec').value = editar && V ? V.tecnic : (localStorage.getItem('tc_tecnic') || '');
+  $('ref').value = editar && V ? V.referencia : '';
+  $('b-ref').textContent = editar ? 'Desar' : 'Començar la visita';
+  $('b-ref-back').classList.toggle('hidden', !editar);
+  $('ref-err').textContent = '';
+  chips('tec-recents', 'tc_tecnics'); chips('recents', 'tc_recents');
+  const hist = editar ? [] : llista('tc_hist');
+  $('hist-w').classList.toggle('hidden', !hist.length);
+  $('hist').innerHTML = hist.map(h => '<div class="hi"><b>' + esc(h.ref) + '</b><br><span>' + esc(h.tecnic) + ' · ' + esc(h.data) + ' · ' + esc(h.resum) + '</span></div>').join('');
+  show('ref');
+  setTimeout(() => (editar || $('tec').value ? $('ref') : $('tec')).focus(), 100);
+}
+$('tec-recents').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) { $('tec').value = b.dataset.r; $('ref').focus(); } });
+$('recents').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) $('ref').value = b.dataset.r; });
+$('b-ref-back').onclick = () => goVisita();
+$('b-ref').onclick = async () => {
+  const t = $('tec').value.trim().replace(/\s+/g, ' ');
+  const r = $('ref').value.trim().replace(/\s+/g, ' ');
+  if (t.length < 2) { $('ref-err').textContent = 'Escriu qui fa el control.'; return $('tec').focus(); }
+  if (r.length < 2) { $('ref-err').textContent = 'Escriu la referència de l’obra o el client.'; return $('ref').focus(); }
+  localStorage.setItem('tc_tecnic', t);
+  recorda('tc_tecnics', t); recorda('tc_recents', r);
+  if (editantRef && V) { V.tecnic = t; V.referencia = r; await save(); return goVisita(); }
+  V = { id: uid(), tecnic: t, referencia: r, inici: isoLocal(new Date()), estat: 'oberta', folderId: null,
+        seqObs: 0, obs: [], notaGeneral: '', decisions: false };
+  nouObs();
+  await save();
+  goVisita();
+};
+$('tec').addEventListener('keydown', e => { if (e.key === 'Enter') $('ref').focus(); });
+['tec', 'ref'].forEach(id => $(id).addEventListener('input', () => { $('ref-err').textContent = ''; }));
+$('ref').addEventListener('keydown', e => { if (e.key === 'Enter') $('b-ref').click(); });
+$('b-edit-ref').onclick = () => {
+  if (V && V.folderId) return toast('La visita ja s’ha començat a enviar: aquestes dades ja no es poden canviar.');
+  goRef(true);
+};
+
+/* ------------------------------ visita ------------------------------ */
+function nouObs() {
+  V.seqObs = (V.seqObs || 0) + 1;
+  V.obs.push({ id: uid(), n: V.seqObs, hora: hhmm(new Date()), nota: '', items: [], seq: { foto: 0, audio: 0, video: 0 } });
+}
+function goVisita() {
+  if (V.estat === 'enviant') V.estat = 'pendent';
+  $('v-ref').textContent = V.referencia;
+  $('v-meta').textContent = V.tecnic + ' · ' + dataCurta(V.inici);
+  $('nota-gen').value = V.notaGeneral || '';
+  $('decisions').checked = !!V.decisions;
+  pintaLang();
+  renderObs();
+  show('visita');
+}
+
+const urls = new Map(); // id -> objectURL de miniatures
+async function thumbUrl(id) {
+  if (urls.has(id)) return urls.get(id);
+  const b = await blobGet(id); if (!b) return '';
+  const u = URL.createObjectURL(b); urls.set(id, u); return u;
+}
+function dropUrl(id) { if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); } }
+
+async function renderObs() {
+  const list = $('obs-list');
+  list.innerHTML = V.obs.map((o, i) => {
+    const audios = o.items.filter(x => x.tipus === 'audio'), videos = o.items.filter(x => x.tipus === 'video');
+    const senseText = !o.nota.trim() && audios.length;
+    return '<div class="card obs" data-o="' + o.id + '">' +
+      '<div class="oh"><b>Observació ' + (i + 1) + '</b><span>' + esc(o.hora) + '</span><button class="del" data-a="del-obs">Eliminar</button></div>' +
+      '<div class="thumbs">' + o.items.filter(x => x.tipus === 'foto').map(x =>
+        '<div class="th"><img data-a="ver" data-i="' + x.id + '" alt=""><button class="x" data-a="del-item" data-i="' + x.id + '">×</button></div>').join('') + '</div>' +
+      '<div class="row"><button class="btn small" data-a="foto">📷 Fer foto</button><button class="btn small" data-a="galeria">🖼️ Galeria</button></div>' +
+      '<button class="btn dictar" data-a="dictar">🎙️ Dictar nota</button>' +
+      '<div class="escolta hidden">● Escoltant… parla i el text apareix a sota</div>' +
+      '<textarea data-a="nota" placeholder="Nota: toca «Dictar nota» o escriu aquí. Pots corregir el text quan vulguis." style="margin-top:10px">' + esc(o.nota) + '</textarea>' +
+      '<div class="warn' + (senseText ? '' : ' hidden') + '">Hi ha àudio però no text: aquesta observació no sortirà a l’informe si no la dictes.</div>' +
+      '<div class="row" style="margin-top:10px"><button class="btn small" data-a="audio">⏺ Gravar àudio</button><button class="btn small" data-a="video">🎥 Vídeo</button></div>' +
+      '<div class="media">' +
+        audios.map(x => '<div class="mi">🎙️<audio controls preload="none" data-src="' + x.id + '"></audio><button class="x" data-a="del-item" data-i="' + x.id + '">×</button></div>').join('') +
+        videos.map(x => '<div class="mi">🎥 <span style="flex:1">Vídeo · ' + mb(x.size) + '</span><button class="x" data-a="del-item" data-i="' + x.id + '">×</button></div>').join('') +
+      '</div></div>';
+  }).join('');
+  list.querySelectorAll('textarea').forEach(creix);
+  for (const img of list.querySelectorAll('img[data-i]')) img.src = await thumbUrl(img.dataset.i);
+  for (const au of list.querySelectorAll('audio[data-src]')) au.src = await thumbUrl(au.dataset.src);
+}
+
+let notaT;
+$('obs-list').addEventListener('input', e => {
+  if (e.target.dataset.a !== 'nota') return;
+  const o = obsDe(e.target); if (!o) return;
+  if (dict) aturaDictat(true);
+  o.nota = e.target.value; creix(e.target);
+  const w = e.target.closest('[data-o]').querySelector('.warn');
+  if (w) w.classList.toggle('hidden', !!o.nota.trim() || !o.items.some(x => x.tipus === 'audio'));
+  clearTimeout(notaT); notaT = setTimeout(save, 400);
+});
+$('obs-list').addEventListener('focusout', e => { if (e.target.dataset.a === 'nota') save(); });
+$('decisions').addEventListener('change', e => { V.decisions = e.target.checked; save(); });
+$('nota-gen').addEventListener('input', e => { V.notaGeneral = e.target.value; clearTimeout(notaT); notaT = setTimeout(save, 400); });
+function creix(t) { t.style.height = 'auto'; t.style.height = Math.max(96, t.scrollHeight + 2) + 'px'; }
+function obsDe(el) { const c = el.closest('[data-o]'); return c && V.obs.find(o => o.id === c.dataset.o); }
+
+$('obs-list').addEventListener('click', async e => {
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, o = obsDe(b); if (!o) return;
+  if (a === 'dictar') return dicta(o, b);
+  if (dict && a !== 'nota') aturaDictat();
+  if (a === 'foto') return afegeixFotos(o, await tria('image/*', 'environment', false));
+  if (a === 'galeria') return afegeixFotos(o, await tria('image/*', null, true));
+  if (a === 'video') return afegeixVideo(o, await tria('video/*', 'environment', false));
+  if (a === 'audio') return gravaAudio(o, b);
+  if (a === 'ver') return veure(b.dataset.i);
+  if (a === 'del-item') {
+    if (!await confirmar('Eliminar', 'Vols eliminar aquest element?', 'Eliminar', 'Cancel·lar', true)) return;
+    o.items = o.items.filter(x => x.id !== b.dataset.i); dropUrl(b.dataset.i);
+    await blobDel(b.dataset.i); await save(); return renderObs();
+  }
+  if (a === 'del-obs') {
+    if (!await confirmar('Eliminar observació', 'S’eliminaran la nota i tots els seus fitxers.', 'Eliminar', 'Cancel·lar', true)) return;
+    for (const x of o.items) { dropUrl(x.id); await blobDel(x.id); }
+    V.obs = V.obs.filter(x => x !== o); await save(); return renderObs();
+  }
+});
+
+function afegirObs() { aturaDictat(); nouObs(); save(); renderObs().then(() => { const c = $('obs-list').lastElementChild; if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }
+$('b-add-obs').onclick = afegirObs;
+$('b-add-obs2').onclick = afegirObs;
+
+$('b-descartar').onclick = async () => {
+  if (!await confirmar('Descartar la visita', 'S’esborraran totes les fotos i notes d’aquesta visita del mòbil. No es pot desfer.', 'Descartar', 'Cancel·lar', true)) return;
+  await esborraVisita(); goInici();
+};
+async function esborraVisita() {
+  if (!V) return;
+  for (const o of V.obs) for (const x of o.items) { dropUrl(x.id); try { await blobDel(x.id); } catch (e) {} }
+  V = null; await kvDel('visita');
+}
+
+/* ------------------------------ captura ------------------------------ */
+function tria(accept, capture, multiple) {
+  return new Promise(res => {
+    const i = document.createElement('input');
+    i.type = 'file'; i.accept = accept; i.style.display = 'none';
+    if (capture) i.setAttribute('capture', capture);
+    if (multiple) i.multiple = true;
+    i.onchange = () => { res(Array.from(i.files || [])); i.remove(); };
+    document.body.appendChild(i); i.click();
+  });
+}
+function extDe(mime, nom) {
+  const m = (mime || '').split(';')[0].toLowerCase();
+  const t = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic',
+    'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'aac', 'audio/mpeg': 'mp3', 'audio/wav': 'wav', 'audio/3gpp': '3gp', 'audio/amr': 'amr',
+    'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/3gpp': '3gp' }[m];
+  if (t) return t;
+  const e = (nom || '').split('.').pop();
+  return e && e.length <= 5 && e !== nom ? e.toLowerCase() : 'bin';
+}
+async function afegeixItem(o, tipus, blob, mime, nomOrig) {
+  o.seq = o.seq || { foto: 0, audio: 0, video: 0 };
+  o.seq[tipus] = (o.seq[tipus] || 0) + 1;
+  const it = { id: uid(), tipus, mime: (mime || blob.type || 'application/octet-stream').split(';')[0], size: blob.size,
+    nom: 'obs' + pad(o.n) + '_' + tipus + pad(o.seq[tipus]) + '.' + extDe(mime || blob.type, nomOrig), pujat: false, session: null, offset: 0 };
+  await blobSet(it.id, blob);
+  o.items.push(it);
+  await save();
+  return it;
+}
+
+async function comprimeix(file) {
+  try {
+    let src;
+    try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) {
+      src = await new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image();
+        im.onload = () => { URL.revokeObjectURL(u); res(im); }; im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('img')); }; im.src = u; });
+    }
+    const w = src.width || src.naturalWidth, h = src.height || src.naturalHeight;
+    const s = Math.min(1, PHOTO_MAX / Math.max(w, h));
+    const c = document.createElement('canvas'); c.width = Math.round(w * s); c.height = Math.round(h * s);
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    if (src.close) src.close();
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', PHOTO_Q));
+    if (b && b.size) return b;
+  } catch (e) { /* es desa l'original */ }
+  return file;
+}
+async function afegeixFotos(o, files) {
+  files = files.filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name));
+  if (!files.length) return;
+  toast(files.length > 1 ? 'Processant ' + files.length + ' fotos…' : 'Processant la foto…', 0);
+  for (const f of files) {
+    const b = await comprimeix(f);
+    await afegeixItem(o, 'foto', b, b === f ? f.type : 'image/jpeg', f.name);
+  }
+  toast(files.length > 1 ? files.length + ' fotos afegides' : 'Foto afegida');
+  renderObs();
+}
+async function afegeixVideo(o, files) {
+  const f = files[0]; if (!f) return;
+  if (f.size > CFG.maxVideoMb * 1048576) {
+    return confirmar('Vídeo massa gran', 'Fa ' + mb(f.size) + ' i el màxim és ' + CFG.maxVideoMb + ' MB. Grava’l més curt.', 'D’acord', null);
+  }
+  toast('Desant el vídeo…', 0);
+  await afegeixItem(o, 'video', f, f.type || 'video/mp4', f.name);
+  toast('Vídeo afegit · ' + mb(f.size));
+  renderObs();
+}
+
+/* ------------------------------ dictat en directe ------------------------------ */
+// Transcriu la veu a text a l'instant dins la nota (reconeixement de veu del navegador).
+// El text es pot corregir a mà. Si el navegador no ho permet, es fa servir el 🎤 del teclat.
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let dict = null, srBloquejat = false;
+const langDictat = () => localStorage.getItem('tc_lang') || 'ca-ES';
+function pintaLang() { $('lang').querySelectorAll('[data-l]').forEach(b => b.classList.toggle('on', b.dataset.l === langDictat())); }
+$('lang').addEventListener('click', e => {
+  const b = e.target.closest('[data-l]'); if (!b) return;
+  localStorage.setItem('tc_lang', b.dataset.l); pintaLang(); aturaDictat();
+  toast(b.dataset.l === 'es-ES' ? 'Dictat en castellà' : 'Dictat en català');
+});
+function majuscula(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+function aturaDictat(perEscriure) {
+  if (!dict) return;
+  const d = dict;
+  d.actiu = false;
+  d.descartaInterim = !!perEscriure;
+  // «stop» encara lliura les últimes paraules; «abort» les descarta (quan l'usuari ja escriu a mà)
+  if (perEscriure) d.rec._descartat = true;
+  try { perEscriure ? d.rec.abort() : d.rec.stop(); } catch (e) { /* res */ }
+  fiDictat();
+}
+function fiDictat() {
+  if (!dict) return;
+  const d = dict; dict = null;
+  if (!d.descartaInterim) d.ta.value = d.o.nota;
+  creix(d.ta);
+  d.btn.classList.remove('rec'); d.btn.textContent = '🎙️ Dictar nota';
+  const w = d.card.querySelector('.escolta'); if (w) w.classList.add('hidden');
+  save();
+}
+function dictaTeclat(card, gest) {
+  const ta = card.querySelector('textarea[data-a=nota]');
+  if (gest) { ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {} }
+  ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toast(gest ? 'Toca el 🎤 del teclat i parla: el text apareix a l’instant.' : 'Toca la nota i fes servir el 🎤 del teclat per dictar.', 5000);
+}
+function dicta(o, btn) {
+  if (dict) { const mateixa = dict.o === o; aturaDictat(); if (mateixa) return; }
+  if (rec) return toast('Atura primer la gravació d’àudio.');
+  const card = btn.closest('[data-o]');
+  // Si el navegador no deixa dictar dins l'app (p. ex. Apps Script bloqueja el micròfon), s'obre el teclat a la nota
+  if (!SR || srBloquejat) return dictaTeclat(card, true);
+  const ta = card.querySelector('textarea[data-a=nota]');
+  const r = new SR();
+  r.lang = langDictat(); r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  dict = { o, btn, ta, card, rec: r, actiu: true, errors: 0, descartaInterim: false };
+  const afegeix = t => {
+    t = t.trim(); if (!t) return;
+    const n = o.nota.replace(/\s+$/, '');
+    o.nota = n ? n + ' ' + (/[.!?]$/.test(n) ? majuscula(t) : t) : majuscula(t);
+  };
+  r.onresult = e => {
+    const viu = !!dict && dict.rec === r;
+    if (r._descartat) return;
+    let fin = '', inter = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += t; else inter += t;
+    }
+    if (fin) { afegeix(fin); save(); }   // les últimes paraules arriben fins i tot després d'«Aturar»
+    ta.value = o.nota + (viu && inter.trim() ? (o.nota ? ' ' : '') + inter.trim() : '');
+    creix(ta);
+    const w = card.querySelector('.warn'); if (w) w.classList.toggle('hidden', !!o.nota.trim() || !o.items.some(x => x.tipus === 'audio'));
+  };
+  r.onerror = e => {
+    if (!dict || dict.rec !== r) return;
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      dict.actiu = false;
+      srBloquejat = true;
+      if (dinsGoogle()) setTimeout(() => dictaTeclat(card, false), 50);
+      else confirmar('Micròfon bloquejat',
+        'Cal permetre el micròfon per a aquesta app. A Chrome: ⋮ → Configuració → Configuració de llocs → Micròfon → treu aquesta adreça de «Bloquejats».\nMentrestant, pots dictar amb el 🎤 del teclat.', 'D’acord', null);
+    }
+    else if (e.error === 'network') { dict.actiu = false; toast('Sense connexió: fes servir el 🎤 del teclat.', 4000); }
+    else if (e.error === 'language-not-supported') { dict.actiu = false; toast('Idioma no disponible en aquest mòbil.', 4000); }
+    else if (e.error !== 'no-speech' && e.error !== 'aborted' && ++dict.errors > 3) dict.actiu = false;
+  };
+  r.onend = () => {
+    // El navegador s'atura sol després d'una pausa: es torna a engegar fins que es prem «Aturar».
+    if (dict && dict.rec === r && dict.actiu) { try { r.start(); return; } catch (e) { /* res */ } }
+    if (dict && dict.rec === r) fiDictat();
+  };
+  btn.classList.add('rec'); btn.textContent = '■ Aturar dictat';
+  card.querySelector('.escolta').classList.remove('hidden');
+  try { r.start(); } catch (e) { fiDictat(); toast('No s’ha pogut iniciar el dictat.'); }
+}
+
+let rec = null;
+async function gravaAudio(o, btn) {
+  if (dict) aturaDictat();
+  if (rec) { if (rec.obsId === o.id) rec.mr.stop(); return; }
+  let stream = null;
+  if (window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { stream = null; }
+  }
+  if (!stream) { // alternativa: gravadora del mòbil
+    const f = (await tria('audio/*', 'user', false))[0]; if (!f) return;
+    await afegeixItem(o, 'audio', f, f.type || 'audio/mpeg', f.name); toast('Àudio afegit'); return renderObs();
+  }
+  const tipus = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  const mr = new MediaRecorder(stream, tipus ? { mimeType: tipus } : undefined);
+  const parts = [];
+  mr.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+  mr.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); clearInterval(rec.timer);
+    const mime = mr.mimeType || tipus || 'audio/webm';
+    rec = null;
+    const blob = new Blob(parts, { type: mime });
+    if (blob.size) { await afegeixItem(o, 'audio', blob, mime, ''); toast('Àudio desat'); }
+    renderObs();
+  };
+  rec = { mr, obsId: o.id, t0: Date.now() };
+  btn.classList.add('rec'); btn.textContent = '■ Aturar 0:00';
+  rec.timer = setInterval(() => { btn.textContent = '■ Aturar ' + durada((Date.now() - rec.t0) / 1000); }, 500);
+  mr.start(1000);
+}
+
+async function veure(id) {
+  const u = await thumbUrl(id); if (!u) return;
+  const v = document.createElement('div'); v.className = 'viewer';
+  v.innerHTML = '<img alt="">'; v.firstChild.src = u;
+  v.onclick = () => v.remove(); document.body.appendChild(v);
+}
+
+/* ------------------------------ enviament ------------------------------ */
+function manifest() {
+  return {
+    app: 'visites-obra-tacuina', versio: APP_VER, visitId: V.id,
+    tecnic: V.tecnic, referencia: V.referencia, inici: V.inici, enviada: isoLocal(new Date()),
+    observacions: V.obs.map((o, i) => ({
+      n: i + 1, hora: o.hora, nota: o.nota.trim(),
+      fotos: o.items.filter(x => x.tipus === 'foto').map(x => x.nom),
+      audios: o.items.filter(x => x.tipus === 'audio').map(x => x.nom),
+      videos: o.items.filter(x => x.tipus === 'video').map(x => x.nom),
+    })),
+    notaGeneral: (V.notaGeneral || '').trim(),
+    decisionsClient: !!V.decisions,
+  };
+}
+function b64(blob) {
+  return new Promise((res, rej) => { const r = new FileReader();
+    r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+}
+
+$('b-enviar').onclick = async () => {
+  if (rec) return toast('Atura primer la gravació d’àudio.');
+  aturaDictat();
+  const buides = V.obs.filter(o => !o.nota.trim() && !o.items.length);
+  const amb = V.obs.length - buides.length;
+  if (!amb && !(V.notaGeneral || '').trim()) return confirmar('Visita buida', 'Afegeix alguna foto o nota abans d’enviar.', 'D’acord', null);
+  const items = V.obs.flatMap(o => o.items);
+  const total = items.reduce((a, x) => a + x.size, 0);
+  const nF = items.filter(x => x.tipus === 'foto').length, nA = items.filter(x => x.tipus === 'audio').length, nV = items.filter(x => x.tipus === 'video').length;
+  const senseText = V.obs.filter(o => !o.nota.trim() && o.items.length).length;
+  let txt = (V.decisions ? 'Amb decisions acordades amb el client (còpia per signar)\n' : '') + amb + ' observacions · ' + nF + ' fotos' + (nA ? ' · ' + nA + ' àudios' : '') + (nV ? ' · ' + nV + ' vídeos' : '') + '\nMida total: ' + mb(total);
+  if (senseText) txt += '\n\nAtenció: ' + senseText + (senseText > 1 ? ' observacions no tenen' : ' observació no té') + ' text. L’àudio no es transcriu: a l’informe només hi sortiran les seves fotos, si en té.';
+  if (!await confirmar('Enviar la visita?', txt, 'Enviar', 'Encara no')) return;
+  // Les observacions completament buides no s'envien
+  if (buides.length) { V.obs = V.obs.filter(o => !buides.includes(o)); await save(); }
+  enviar();
+};
+$('b-retry').onclick = () => enviar();
+$('b-back-visit').onclick = () => goVisita();
+$('b-nova').onclick = () => goInici();
+
+async function enviar() {
+  if (sending || !V) return;
+  sending = true;
+  V.estat = 'enviant'; await save();
+  show('enviant');
+  $('env-tit').textContent = 'Enviant la visita…';
+  $('env-err').textContent = ''; $('env-retry').classList.add('hidden'); $('env-hint').classList.remove('hidden');
+  $('env-txt').classList.remove('hidden'); document.querySelector('#s-enviant .progress').classList.remove('hidden');
+  const items = V.obs.flatMap(o => o.items);
+  const total = items.reduce((a, x) => a + x.size, 0) || 1;
+  let fet = items.filter(x => x.pujat).reduce((a, x) => a + x.size, 0);
+  const pinta = (txt, extra = 0) => {
+    $('env-txt').textContent = txt;
+    $('env-bar').style.width = Math.min(100, Math.round((fet + extra) / total * 100)) + '%';
+  };
+  try {
+    pinta('Connectant…');
+    if (!V.folderId) {
+      const r = await srvR('startVisit', [pin(), { visitId: V.id, tecnic: V.tecnic, referencia: V.referencia, inici: V.inici }]);
+      V.folderId = r.folderId; await save();
+    }
+    let k = 0;
+    for (const it of items) {
+      k++;
+      if (it.pujat) continue;
+      const etiqueta = 'Fitxer ' + k + ' de ' + items.length;
+      pinta(etiqueta + '…');
+      await pujaItem(it, (bytes) => pinta(etiqueta + ' · ' + Math.round((fet + bytes) / total * 100) + '%', bytes));
+      it.pujat = true; it.session = null; fet += it.size; await save();
+    }
+    pinta('Tancant la visita…');
+    let r = await srvR('finishVisit', [pin(), V.folderId, manifest()]);
+    if (!r.ok && r.missing && r.missing.length) {
+      // Algun fitxer no ha arribat: es torna a pujar
+      items.forEach(x => { if (r.missing.includes(x.nom)) { x.pujat = false; x.session = null; x.offset = 0; } });
+      await save();
+      throw new Error('Falten ' + r.missing.length + ' fitxers al servidor. Torna-ho a provar.');
+    }
+    $('env-bar').style.width = '100%';
+    const items2 = V.obs.flatMap(o => o.items);
+    const resum = V.obs.length + ' obs. · ' + items2.filter(x => x.tipus === 'foto').length + ' fotos';
+    const hist = llista('tc_hist');
+    hist.unshift({ ref: V.referencia, tecnic: V.tecnic, data: dataCurta(V.inici), resum });
+    localStorage.setItem('tc_hist', JSON.stringify(hist.slice(0, 10)));
+    $('fet-txt').innerHTML = '<b>' + esc(V.referencia) + '</b><br>' + esc(resum) + '<br><span class="hint">Ja ha arribat a l’oficina.</span>';
+    await esborraVisita();
+    sending = false;
+    show('fet');
+  } catch (e) {
+    sending = false;
+    if (V) { V.estat = 'pendent'; await save(); }
+    $('env-tit').textContent = 'No s’ha pogut enviar';
+    $('env-hint').classList.add('hidden');
+    $('env-txt').classList.add('hidden'); document.querySelector('#s-enviant .progress').classList.add('hidden');
+    const m = errMsg(e);
+    $('env-err').textContent = (/PIN/.test(m) ? m : 'Error: ' + m) + '\nLa visita queda desada al mòbil. Torna-ho a provar quan tinguis cobertura.';
+    $('env-err').style.whiteSpace = 'pre-line';
+    $('env-retry').classList.remove('hidden');
+  }
+}
+
+async function pujaItem(it, onProg) {
+  const blob = await blobGet(it.id);
+  if (!blob) throw new Error('Falta ' + it.nom + ' al mòbil');
+  if (blob.size <= MAX_SMALL) {
+    const data = await b64(blob);
+    await srvR('uploadSmall', [pin(), V.folderId, it.nom, it.mime, data]);
+    return;
+  }
+  // Pujada per trossos (vídeos i fitxers grans)
+  if (it.session) {
+    const q = await srvR('queryResumable', [pin(), it.session, blob.size]);
+    if (q.done) return;
+    if (q.expired) { it.session = null; it.offset = 0; } else it.offset = q.next;
+  }
+  if (!it.session) {
+    const r = await srvR('startResumable', [pin(), V.folderId, it.nom, it.mime, blob.size]);
+    if (r.done) return;
+    it.session = r.session; it.offset = 0; await save();
+  }
+  let errors = 0;
+  while (it.offset < blob.size) {
+    const fi = Math.min(it.offset + CHUNK, blob.size);
+    const data = await b64(blob.slice(it.offset, fi));
+    let r;
+    try { r = await srv('uploadChunk', pin(), it.session, data, it.offset, blob.size); }
+    catch (e) {
+      if (/PIN/.test(errMsg(e)) || ++errors > 6) throw e;
+      await sleep(2000 * errors);
+      const q = await srvR('queryResumable', [pin(), it.session, blob.size]);
+      if (q.done) return;
+      if (q.expired) throw new Error('La pujada del vídeo ha caducat. Torna-ho a provar.');
+      it.offset = q.next; await save();
+      continue;
+    }
+    if (r.done) return;
+    if (r.expired) { it.session = null; await save(); throw new Error('La pujada del vídeo ha caducat. Torna-ho a provar.'); }
+    it.offset = r.next; errors = 0; await save();
+    onProg(it.offset);
+  }
+}
+
+window.addEventListener('pagehide', () => { save(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+init();
+</script>
+</body>
+</html>
