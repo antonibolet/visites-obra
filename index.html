@@ -50,7 +50,7 @@
   .row>*{flex:1}
   .stack>*+*{margin-top:10px}
 
-  input[type=text],input[type=password],textarea{width:100%;font:inherit;color:var(--ink);background:#fff;
+  input[type=text],input[type=search],input[type=password],textarea{-webkit-appearance:none;appearance:none;width:100%;font:inherit;color:var(--ink);background:#fff;
     border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}
   input:focus,textarea:focus{border-color:var(--tan);box-shadow:0 0 0 3px var(--tan-l)}
   textarea{min-height:96px;resize:vertical}
@@ -60,6 +60,14 @@
   .tec{min-height:64px;font-size:19px}
   .tec.last{border-color:var(--tan);box-shadow:0 0 0 2px var(--tan-l)}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .obres{border:1px solid var(--line);border-radius:12px;max-height:44vh;overflow:auto;background:#fff}
+  .obres:empty{display:none}
+  .ob{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:14px;font-size:17px}
+  .ob:last-child{border-bottom:0}
+  .ob.sel{background:var(--tan-l);font-weight:700}
+  .ob.sel::before{content:'✓ ';color:var(--tan-d)}
+  .obres .buit{padding:14px;color:var(--grey);font-size:15px}
+  .nova{background:#FFF4D6;border-radius:10px;padding:10px 12px;font-size:14px;color:#6B4E00}
   .chips:empty{display:none}
   .lbl{display:block;font-weight:600;font-size:16px}
   .toggle{display:flex;gap:12px;align-items:flex-start;margin-top:22px;cursor:pointer}
@@ -148,9 +156,11 @@
       <label class="lbl" for="tec">Qui fa el control?</label>
       <input id="tec" type="text" autocomplete="off" autocapitalize="words" placeholder="Nom i cognom">
       <div class="chips" id="tec-recents"></div>
-      <label class="lbl" for="ref" style="margin-top:16px">Referència de l'obra o client</label>
-      <input id="ref" type="text" autocomplete="off" placeholder="Ex.: Garcia – Cuina c/ Major 12">
-      <div class="chips" id="recents"></div>
+      <label class="lbl" for="ref" style="margin-top:16px">Obra</label>
+      <input id="ref" type="search" autocomplete="off" placeholder="Cerca l'obra…">
+      <div class="obres" id="obres"></div>
+      <div class="nova hidden" id="nova-w">Obra nova: s'afegirà a la llista d'obres. Comprova abans que no hi sigui amb un altre nom (client o carrer).</div>
+      <button class="btn ghost small" id="b-obra-nova">+ Obra nova (no és a la llista)</button>
       <div class="err" id="ref-err"></div>
       <button class="btn primary" id="b-ref">Començar la visita</button>
       <button class="btn ghost hidden" id="b-ref-back">Tornar</button>
@@ -219,12 +229,12 @@
 /* =========================================================================
    App de visites d'obra · Tacuina
    ========================================================================= */
-const APP_VER = '1.4';
+const APP_VER = '1.5';
 const MAX_SMALL = 5 * 1024 * 1024;   // fins a 5 MB es puja d'un cop
 const CHUNK = 4 * 1024 * 1024;       // trossos de 4 MiB (múltiple de 256 KiB)
 const PHOTO_MAX = 2000;              // costat llarg màxim de les fotos (px)
 const PHOTO_Q = 0.82;                // qualitat JPEG
-let CFG = { maxVideoMb: 300 };
+let CFG = { maxVideoMb: 300, obres: null };
 let V = null;                        // visita en curs
 let sending = false;
 
@@ -388,35 +398,68 @@ function goInici() {
 }
 
 /* ------------------------- nova visita / editar dades ------------------------- */
-let editantRef = false;
+// Les obres surten del full «OBRES» (només les actives); la llista es desa per treballar sense cobertura.
+let editantRef = false, obraNova = false;
+const sensePunts = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+const obresLlista = () => Array.isArray(CFG.obres) ? CFG.obres : null;   // null = sense llista (text lliure)
+function obraExacta(t) { const l = obresLlista() || []; return l.find(o => sensePunts(o) === sensePunts(t)) || null; }
+function pintaObres() {
+  const l = obresLlista();
+  const nova = obraNova || !l;
+  $('b-obra-nova').classList.toggle('hidden', !l || obraNova);
+  $('nova-w').classList.toggle('hidden', !obraNova);
+  $('ref').placeholder = nova ? 'Nom pactat de l’obra (client o carrer)' : 'Cerca l’obra…';
+  if (nova) { $('obres').innerHTML = ''; return; }
+  const q = sensePunts($('ref').value);
+  const sel = obraExacta($('ref').value);
+  const vis = l.filter(o => !q || sensePunts(o).includes(q) || o === sel);
+  $('obres').innerHTML = vis.length
+    ? vis.map(o => '<button class="ob' + (o === sel ? ' sel' : '') + '" data-o="' + esc(o) + '">' + esc(o) + '</button>').join('')
+    : '<div class="buit">Cap obra coincideix. Si és nova, toca «+ Obra nova».</div>';
+}
 function chips(el, k) {
   $(el).innerHTML = llista(k).map(r => '<button class="chip" data-r="' + esc(r) + '">' + esc(r) + '</button>').join('');
 }
+function refrescaObres() {
+  srv('checkPin', pin()).then(c => { CFG = c; localStorage.setItem('tc_cfg', JSON.stringify(c)); if (!$('s-ref').classList.contains('hidden')) pintaObres(); })
+    .catch(() => {});
+}
 function goRef(editar) {
-  editantRef = editar;
+  editantRef = editar; obraNova = false;
   $('ref-tit').textContent = editar ? 'Dades de la visita' : 'Nova visita';
   $('tec').value = editar && V ? V.tecnic : (localStorage.getItem('tc_tecnic') || '');
   $('ref').value = editar && V ? V.referencia : '';
+  if (editar && V && obresLlista() && !obraExacta(V.referencia)) obraNova = true;
   $('b-ref').textContent = editar ? 'Desar' : 'Començar la visita';
   $('b-ref-back').classList.toggle('hidden', !editar);
   $('ref-err').textContent = '';
-  chips('tec-recents', 'tc_tecnics'); chips('recents', 'tc_recents');
+  chips('tec-recents', 'tc_tecnics');
+  pintaObres();
   const hist = editar ? [] : llista('tc_hist');
   $('hist-w').classList.toggle('hidden', !hist.length);
   $('hist').innerHTML = hist.map(h => '<div class="hi"><b>' + esc(h.ref) + '</b><br><span>' + esc(h.tecnic) + ' · ' + esc(h.data) + ' · ' + esc(h.resum) + '</span></div>').join('');
   show('ref');
-  setTimeout(() => (editar || $('tec').value ? $('ref') : $('tec')).focus(), 100);
+  refrescaObres();
+  if (!$('tec').value) setTimeout(() => $('tec').focus(), 100);
 }
-$('tec-recents').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) { $('tec').value = b.dataset.r; $('ref').focus(); } });
-$('recents').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) $('ref').value = b.dataset.r; });
+$('tec-recents').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) { $('tec').value = b.dataset.r; } });
+$('obres').addEventListener('click', e => {
+  const b = e.target.closest('[data-o]'); if (!b) return;
+  $('ref').value = b.dataset.o; $('ref-err').textContent = ''; pintaObres();
+});
+$('b-obra-nova').onclick = () => { obraNova = true; $('ref').value = ''; pintaObres(); $('ref').focus(); };
 $('b-ref-back').onclick = () => goVisita();
 $('b-ref').onclick = async () => {
   const t = $('tec').value.trim().replace(/\s+/g, ' ');
-  const r = $('ref').value.trim().replace(/\s+/g, ' ');
+  let r = $('ref').value.trim().replace(/\s+/g, ' ');
   if (t.length < 2) { $('ref-err').textContent = 'Escriu qui fa el control.'; return $('tec').focus(); }
-  if (r.length < 2) { $('ref-err').textContent = 'Escriu la referència de l’obra o el client.'; return $('ref').focus(); }
+  if (r.length < 2) { $('ref-err').textContent = obresLlista() && !obraNova ? 'Tria l’obra de la llista.' : 'Escriu el nom pactat de l’obra.'; return $('ref').focus(); }
+  const exacta = obraExacta(r);
+  if (exacta) r = exacta;   // sempre amb el nom exacte del full
+  else if (obresLlista() && !obraNova) { $('ref-err').textContent = 'Tria l’obra de la llista o toca «+ Obra nova».'; return; }
+  else if (obresLlista() && !await confirmar('Obra nova', '«' + r + '» no és a la llista d’obres.\nS’hi afegirà amb aquest nom. Comprova que no hi és amb un altre nom (client o carrer).', 'Sí, és nova', 'Revisar')) return;
   localStorage.setItem('tc_tecnic', t);
-  recorda('tc_tecnics', t); recorda('tc_recents', r);
+  recorda('tc_tecnics', t);
   if (editantRef && V) { V.tecnic = t; V.referencia = r; await save(); return goVisita(); }
   V = { id: uid(), tecnic: t, referencia: r, inici: isoLocal(new Date()), estat: 'oberta', folderId: null,
         seqObs: 0, obs: [], notaGeneral: '', decisions: false };
@@ -425,7 +468,8 @@ $('b-ref').onclick = async () => {
   goVisita();
 };
 $('tec').addEventListener('keydown', e => { if (e.key === 'Enter') $('ref').focus(); });
-['tec', 'ref'].forEach(id => $(id).addEventListener('input', () => { $('ref-err').textContent = ''; }));
+$('tec').addEventListener('input', () => { $('ref-err').textContent = ''; });
+$('ref').addEventListener('input', () => { $('ref-err').textContent = ''; pintaObres(); });
 $('ref').addEventListener('keydown', e => { if (e.key === 'Enter') $('b-ref').click(); });
 $('b-edit-ref').onclick = () => {
   if (V && V.folderId) return toast('La visita ja s’ha començat a enviar: aquestes dades ja no es poden canviar.');

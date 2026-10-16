@@ -1,5 +1,5 @@
 // Visites d'obra · Tacuina — permet obrir l'app sense cobertura (les visites ja es desen al mòbil).
-const CACHE = 'visites-1.4';
+const CACHE = 'visites-1.5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
